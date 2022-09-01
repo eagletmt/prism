@@ -4,7 +4,6 @@ import java.time.LocalDate;
 
 import org.apache.parquet.io.api.RecordConsumer;
 import com.cookpad.prism.record.Record;
-import com.cookpad.prism.record.partitioned.PartitionedRecord;
 import com.cookpad.prism.record.values.Value;
 
 import lombok.RequiredArgsConstructor;

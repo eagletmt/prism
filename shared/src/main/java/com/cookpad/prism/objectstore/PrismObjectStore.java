@@ -1,6 +1,5 @@
 package com.cookpad.prism.objectstore;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,26 +8,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
+import java.util.HashMap;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @RequiredArgsConstructor
 @Slf4j
 public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
-    final private AmazonS3 s3;
+    final private S3Client s3;
     final private PrismTableLocator locator;
 
     @Override
     public InputStream getLiveObject(LocalDate dt, long objectId) {
         String key = locator.getLiveObjectKey(dt, objectId);
         log.debug("Get live object: {}", key);
-        S3Object object = s3.getObject(locator.getBucketName(), key);
-        return object.getObjectContent();
+        return s3.getObject(r -> r.bucket(locator.getBucketName()).key(key));
     }
 
     @Override
@@ -44,7 +42,7 @@ public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
     public String putLiveObjectFile(LocalDate dt, long objectId, File content) {
         String key = locator.getLiveObjectKey(dt, objectId);
         log.info("PutObject (live) key={}", key);
-        s3.putObject(locator.getBucketName(), key, content);
+        s3.putObject(r -> r.bucket(locator.getBucketName()).key(key), RequestBody.fromFile(content));
         return key;
     }
 
@@ -52,8 +50,7 @@ public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
     public InputStream getDelayedObject(LocalDate dt, long objectId) {
         String key = locator.getDelayedObjectKey(dt, objectId);
         log.debug("Get delayed object: {}", key);
-        S3Object object = s3.getObject(locator.getBucketName(), key);
-        return object.getObjectContent();
+        return s3.getObject(r -> r.bucket(locator.getBucketName()).key(key));
     }
 
     @Override
@@ -69,7 +66,7 @@ public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
     public String putDelayedObjectFile(LocalDate dt, long objectId, File content) {
         String key = locator.getDelayedObjectKey(dt, objectId);
         log.info("PutObject (delayed) key={}", key);
-        s3.putObject(locator.getBucketName(), key, content);
+        s3.putObject(r -> r.bucket(locator.getBucketName()).key(key), RequestBody.fromFile(content));
         return key;
     }
 
@@ -77,8 +74,7 @@ public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
     public InputStream getMergedObject(LocalDate dt, long lowerBound, long upperBound) {
         String key = locator.getMergedObjectKey(dt, lowerBound, upperBound);
         log.debug("Get merged object: {}", key);
-        S3Object object = s3.getObject(locator.getBucketName(), key);
-        return object.getObjectContent();
+        return s3.getObject(r -> r.bucket(locator.getBucketName()).key(key));
     }
 
     @Override
@@ -94,7 +90,7 @@ public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
     public String putMergedObjectFile(LocalDate dt, long lowerBound, long upperBound, File content) {
         String key = locator.getMergedObjectKey(dt, lowerBound, upperBound);
         log.info("PutObject (merged) key={}", key);
-        s3.putObject(locator.getBucketName(), key, content);
+        s3.putObject(r -> r.bucket(locator.getBucketName()).key(key), RequestBody.fromFile(content));
         return key;
     }
 
@@ -102,12 +98,11 @@ public class PrismObjectStore implements SmallObjectStore, MergedObjectStore {
     public String putMergedPartitionManifest(LocalDate dt, long manifestVersion, String content) {
         String key = locator.getMergedPartitionManifestKey(dt, manifestVersion);
         log.info("Put partition manifest: {}", key);
-        ObjectMetadata metadata = new ObjectMetadata();
+        Map<String, String> metadata = new HashMap<>();
         byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
-        metadata.setContentLength(contentBytes.length);
-        InputStream contentStream = new ByteArrayInputStream(contentBytes);
+        metadata.put("content-length", String.valueOf(contentBytes.length));
         log.info("PutObject (manifest) key={}", key);
-        s3.putObject(locator.getBucketName(), key, contentStream, metadata);
+        s3.putObject(r -> r.bucket(locator.getBucketName()).key(key).metadata(metadata), RequestBody.fromBytes(contentBytes));
         return key;
     }
 }

@@ -6,21 +6,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3URI;
-import com.amazonaws.services.s3.model.S3Object;
+import com.cookpad.prism.S3Location;
 
 import lombok.RequiredArgsConstructor;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @RequiredArgsConstructor
 public class S3QueueDownloader {
-    private final AmazonS3 s3;
+    private final S3Client s3;
 
-    public FileQueue download(AmazonS3URI queueObjectUrl) throws IOException {
+    public FileQueue download(S3Location queueObjectUrl) throws IOException {
         String key = queueObjectUrl.getKey();
-        S3Object queueObject = s3.getObject(queueObjectUrl.getBucket(), key);
         Path tmpPath = Files.createTempFile("prism-rebuild-queue-", ".queue").toAbsolutePath();
-        try (InputStream in = queueObject.getObjectContent()) {
+        try (InputStream in = s3.getObject(r -> r.bucket(queueObjectUrl.getBucket()).key(key))) {
             Files.copy(in, tmpPath, StandardCopyOption.REPLACE_EXISTING);
         }
         if (key.endsWith(".gz")) {

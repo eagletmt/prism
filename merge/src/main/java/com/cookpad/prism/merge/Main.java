@@ -5,9 +5,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.RawLocalFileSystem;
@@ -24,6 +21,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @SpringBootApplication
 @MapperScan(basePackages = "com.cookpad.prism.dao")
@@ -39,8 +37,8 @@ public class Main {
     }
 
     @Bean
-    public AmazonS3 s3() {
-        return AmazonS3ClientBuilder.defaultClient();
+    public S3Client s3() {
+        return S3Client.create();
     }
 
     @Bean

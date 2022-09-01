@@ -2,8 +2,6 @@ package com.cookpad.prism.batch;
 
 import java.util.List;
 
-import com.amazonaws.services.s3.AmazonS3URI;
-
 import org.slf4j.MDC;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.CommandLineRunner;
@@ -42,15 +40,6 @@ public class CmdRunner implements CommandLineRunner {
             case "sync":
                 CatalogCmd catalogCmd = ctx.getBean(CatalogCmd.class);
                 catalogCmd.run();
-                break;
-            case "ls-s3-objects":
-                String destS3UriString = this.getSingleOptionValue("dest-s3-uri");
-                AmazonS3URI destS3Uri = new AmazonS3URI(destS3UriString);
-                String bucketName = this.getSingleOptionValue("bucket");
-                String keyStartx = this.getSingleOptionValue("key-startx");
-                String keyEndx = this.getSingleOptionValue("key-endx");
-                ListStagingObjectsCmd listStagingObjectsCmd = ctx.getBean(ListStagingObjectsCmd.class);
-                listStagingObjectsCmd.run(destS3Uri, bucketName, keyStartx, keyEndx);
                 break;
             case "unlink-table":
                 String tableIdString = this.getSingleOptionValue("table");
